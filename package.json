@@ -13,6 +13,6 @@
     "src/*"
   ],
   "author": "carlo",
-  "license": "ISC",
+  "license": "GPL",
   "devDependencies": {}
 }
