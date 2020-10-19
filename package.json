@@ -15,6 +15,5 @@
   "author": "carlo",
   "license": "ISC",
   "devDependencies": {
-    "typescript-to-lua": "^0.32.2"
   }
 }
