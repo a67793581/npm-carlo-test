@@ -1,6 +1,6 @@
 {
   "name": "carlo-test",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "测试",
   "main": "./src/index.js",
   "scripts": {
