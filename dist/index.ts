@@ -1,4 +1,3 @@
-export function sayHello():string
-{
+export default function sayHello(): string {
     return "carlo"
 }
