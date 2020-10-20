@@ -4,11 +4,6 @@
   "description": "测试",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "private": true,
-  "scripts": {
-    "tstl-build": "tstl",
-    "tstl-watch": "tstl --watch"
-  },
   "keywords": [
     "carlo"
   ],
@@ -16,8 +11,5 @@
     "dist/*"
   ],
   "author": "carlo",
-  "license": "GPL",
-  "devDependencies": {
-    "typescript-to-lua": "^0.36.0"
-  }
+  "license": "GPL"
 }
