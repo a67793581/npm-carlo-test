@@ -11,6 +11,9 @@
     "ceres-tstl": "^0.31.0-patch1",
     "cerrie": "^1.0.4"
   },
+  "files": [
+    "**/*"
+  ],
   "scripts": {
     "tstl-watch": "ceres-tstl --watch",
     "tstl-build": "ceres-tstl",
