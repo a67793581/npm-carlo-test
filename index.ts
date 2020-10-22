@@ -19,3 +19,4 @@ class Carlo {
         return playerArray
     }
 }
+export default Carlo
