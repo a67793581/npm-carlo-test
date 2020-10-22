@@ -20,4 +20,5 @@ function Carlo.prototype.getAllPlayer(self)
     end
     return playerArray
 end
+____exports.default = Carlo
 return ____exports
