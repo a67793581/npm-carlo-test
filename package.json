@@ -12,7 +12,10 @@
     "cerrie": "^1.0.4"
   },
   "files": [
-    "**/*"
+    "**/*.lua",
+    "**/*.js",
+    "**/*.d.ts",
+    "**/*.ts"
   ],
   "scripts": {
     "tstl-watch": "ceres-tstl --watch",
