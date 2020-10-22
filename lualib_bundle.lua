@@ -136,22 +136,6 @@ function __TS__ArrayIndexOf(arr, searchElement, fromIndex)
     return -1
 end
 
-function __TS__ArrayJoin(self, separator)
-    if separator == nil then
-        separator = ","
-    end
-    local result = ""
-    for index, value in ipairs(self) do
-        if index > 1 then
-            result = tostring(result) .. tostring(separator)
-        end
-        result = tostring(result) .. tostring(
-            tostring(value)
-        )
-    end
-    return result
-end
-
 function __TS__ArrayMap(arr, callbackfn)
     local newArray = {}
     do
@@ -440,65 +424,61 @@ function __TS__ArraySetLength(arr, length)
     return length
 end
 
-function __TS__Class(self)
-    local c = {prototype = {}}
-    c.prototype.__index = c.prototype
-    c.prototype.constructor = c
-    return c
-end
-
-function __TS__ClassExtends(target, base)
-    target.____super = base
-    local staticMetatable = setmetatable({__index = base}, base)
-    setmetatable(target, staticMetatable)
-    local baseMetatable = getmetatable(base)
-    if baseMetatable then
-        if type(baseMetatable.__index) == "function" then
-            staticMetatable.__index = baseMetatable.__index
-        end
-        if type(baseMetatable.__newindex) == "function" then
-            staticMetatable.__newindex = baseMetatable.__newindex
-        end
-    end
-    setmetatable(target.prototype, base.prototype)
-    if type(base.prototype.__index) == "function" then
-        target.prototype.__index = base.prototype.__index
-    end
-    if type(base.prototype.__newindex) == "function" then
-        target.prototype.__newindex = base.prototype.__newindex
-    end
-    if type(base.prototype.__tostring) == "function" then
-        target.prototype.__tostring = base.prototype.__tostring
-    end
-end
-
-function __TS__CloneDescriptor(____bindingPattern0)
-    local enumerable
-    enumerable = ____bindingPattern0.enumerable
-    local configurable
-    configurable = ____bindingPattern0.configurable
-    local get
-    get = ____bindingPattern0.get
-    local set
-    set = ____bindingPattern0.set
-    local writable
-    writable = ____bindingPattern0.writable
-    local value
-    value = ____bindingPattern0.value
-    local descriptor = {enumerable = enumerable == true, configurable = configurable == true}
-    local hasGetterOrSetter = (get ~= nil) or (set ~= nil)
-    local hasValueOrWritableAttribute = (writable ~= nil) or (value ~= nil)
-    if hasGetterOrSetter and hasValueOrWritableAttribute then
-        error("Invalid property descriptor. Cannot both specify accessors and a value or writable attribute.", 0)
-    end
-    if get or set then
-        descriptor.get = get
-        descriptor.set = set
+_G.TS__CLASS__REGISTRY = _G.TS__CLASS__REGISTRY or ({})
+function __TS__Class(id)
+    if (id ~= nil) and _G.TS__CLASS__REGISTRY[id] then
+        return _G.TS__CLASS__REGISTRY[id]
     else
-        descriptor.value = value
-        descriptor.writable = writable == true
+        local c = {}
+        c.__index = c
+        c.prototype = {}
+        c.prototype.__index = c.prototype
+        c.prototype.constructor = c
+        if id ~= nil then
+            _G.TS__CLASS__REGISTRY[id] = c
+        end
+        return c
     end
-    return descriptor
+end
+
+function __TS__ClassIndex(classTable, key)
+    while true do
+        local getters = rawget(classTable, "____getters")
+        if getters then
+            local getter
+            getter = getters[key]
+            if getter then
+                return getter(classTable)
+            end
+        end
+        classTable = rawget(classTable, "____super")
+        if not classTable then
+            break
+        end
+        local val = rawget(classTable, key)
+        if val ~= nil then
+            return val
+        end
+    end
+end
+
+function __TS__ClassNewIndex(classTable, key, val)
+    local tbl = classTable
+    repeat
+        do
+            local setters = rawget(tbl, "____setters")
+            if setters then
+                local setter
+                setter = setters[key]
+                if setter then
+                    setter(tbl, val)
+                    return
+                end
+            end
+            tbl = rawget(tbl, "____super")
+        end
+    until not tbl
+    rawset(classTable, key, val)
 end
 
 function __TS__Decorate(decorators, target, key, desc)
@@ -511,22 +491,8 @@ function __TS__Decorate(decorators, target, key, desc)
                 local oldResult = result
                 if key == nil then
                     result = decorator(_G, result)
-                elseif desc == true then
-                    local value = rawget(target, key)
-                    local descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key) or ({configurable = true, writable = true, value = value})
-                    local desc = decorator(_G, target, key, descriptor) or descriptor
-                    local isSimpleValue = (((desc.configurable == true) and (desc.writable == true)) and (not desc.get)) and (not desc.set)
-                    if isSimpleValue then
-                        rawset(target, key, desc.value)
-                    else
-                        __TS__SetDescriptor(
-                            target,
-                            key,
-                            __TS__ObjectAssign({}, descriptor, desc)
-                        )
-                    end
-                elseif desc == false then
-                    result = decorator(_G, target, key, desc)
+                elseif desc ~= nil then
+                    result = decorator(_G, target, key, result)
                 else
                     result = decorator(_G, target, key)
                 end
@@ -538,79 +504,18 @@ function __TS__Decorate(decorators, target, key, desc)
     return result
 end
 
-function __TS__DecorateParam(paramIndex, decorator)
-    return function(____, target, key) return decorator(_G, target, key, paramIndex) end
-end
-
-function __TS__ObjectGetOwnPropertyDescriptors(object)
-    local metatable = getmetatable(object)
-    if not metatable then
-        return {}
-    end
-    return rawget(metatable, "_descriptors")
-end
-
-function __TS__Delete(target, key)
-    local descriptors = __TS__ObjectGetOwnPropertyDescriptors(target)
-    local descriptor = descriptors[key]
-    if descriptor then
-        if not descriptor.configurable then
-            error(
-                ((("Cannot delete property " .. tostring(key)) .. " of ") .. tostring(target)) .. ".",
-                0
-            )
-        end
-        descriptors[key] = nil
-        return true
-    end
-    if target[key] ~= nil then
-        target[key] = nil
-        return true
-    end
-    return false
-end
-
-function __TS__DelegatedYield(iterable)
-    if type(iterable) == "string" then
-        for index = 0, #iterable - 1 do
-            coroutine.yield(
-                __TS__StringAccess(iterable, index)
-            )
-        end
-    elseif iterable.____coroutine ~= nil then
-        local co = iterable.____coroutine
-        while true do
-            local status, value = coroutine.resume(co)
-            if not status then
-                error(value, 0)
-            end
-            if coroutine.status(co) == "dead" then
-                return value
-            else
-                coroutine.yield(value)
-            end
-        end
-    elseif iterable[Symbol.iterator] then
-        local iterator = iterable[Symbol.iterator](iterable)
-        while true do
-            local result = iterator:next()
-            if result.done then
-                return result.value
-            else
-                coroutine.yield(result.value)
-            end
-        end
-    else
-        for ____, value in ipairs(iterable) do
-            coroutine.yield(value)
-        end
-    end
-end
-
 function __TS__New(target, ...)
     local instance = setmetatable({}, target.prototype)
     instance:____constructor(...)
     return instance
+end
+
+function __TS__FunctionCall(fn, thisArg, ...)
+    local args = {...}
+    return fn(
+        thisArg,
+        (unpack or table.unpack)(args)
+    )
 end
 
 function __TS__GetErrorStack(self, constructor)
@@ -629,7 +534,7 @@ function __TS__GetErrorStack(self, constructor)
 end
 function __TS__WrapErrorToString(self, getDescription)
     return function(self)
-        local description = getDescription(self)
+        local description = __TS__FunctionCall(getDescription, self)
         local caller = debug.getinfo(3, "f")
         if (_VERSION == "Lua 5.1") or (caller and (caller.func ~= error)) then
             return description
@@ -651,7 +556,7 @@ Error = __TS__InitErrorClass(
     _G,
     (function()
         local ____ = __TS__Class()
-        ____.name = ""
+        ____.name = "____"
         function ____.prototype.____constructor(self, message)
             if message == nil then
                 message = ""
@@ -677,8 +582,10 @@ for ____, errorName in ipairs({"RangeError", "ReferenceError", "SyntaxError", "T
         _G,
         (function()
             local ____ = __TS__Class()
-            ____.name = ____.name
-            __TS__ClassExtends(____, Error)
+            ____.name = "____"
+            ____.____super = Error
+            setmetatable(____, ____.____super)
+            setmetatable(____.prototype, ____.____super.prototype)
             function ____.prototype.____constructor(self, ...)
                 Error.prototype.____constructor(self, ...)
                 self.name = errorName
@@ -689,7 +596,16 @@ for ____, errorName in ipairs({"RangeError", "ReferenceError", "SyntaxError", "T
     )
 end
 
-__TS__Unpack = table.unpack or unpack
+function __TS__FunctionApply(fn, thisArg, args)
+    if args then
+        return fn(
+            thisArg,
+            (unpack or table.unpack)(args)
+        )
+    else
+        return fn(thisArg)
+    end
+end
 
 function __TS__FunctionBind(fn, thisArg, ...)
     local boundArgs = {...}
@@ -704,14 +620,46 @@ function __TS__FunctionBind(fn, thisArg, ...)
         end
         return fn(
             thisArg,
-            __TS__Unpack(args)
+            (unpack or table.unpack)(args)
         )
+    end
+end
+
+function __TS__Index(classProto)
+    return function(tbl, key)
+        local proto = classProto
+        while true do
+            local val = rawget(proto, key)
+            if val ~= nil then
+                return val
+            end
+            local getters = rawget(proto, "____getters")
+            if getters then
+                local getter
+                getter = getters[key]
+                if getter then
+                    return getter(tbl)
+                end
+            end
+            local base = rawget(
+                rawget(proto, "constructor"),
+                "____super"
+            )
+            if not base then
+                break
+            end
+            proto = rawget(base, "prototype")
+        end
     end
 end
 
 ____symbolMetatable = {
     __tostring = function(self)
-        return ("Symbol(" .. tostring(self.description or "")) .. ")"
+        if self.description == nil then
+            return "Symbol()"
+        else
+            return ("Symbol(" .. tostring(self.description)) .. ")"
+        end
     end
 }
 function __TS__Symbol(description)
@@ -724,39 +672,6 @@ Symbol = {
     toStringTag = __TS__Symbol("Symbol.toStringTag")
 }
 
-function __TS__GeneratorIterator(self)
-    return self
-end
-function __TS__GeneratorNext(self, ...)
-    local co = self.____coroutine
-    if coroutine.status(co) == "dead" then
-        return {done = true}
-    end
-    local status, value = coroutine.resume(co, ...)
-    if not status then
-        error(value, 0)
-    end
-    return {
-        value = value,
-        done = coroutine.status(co) == "dead"
-    }
-end
-function __TS__Generator(fn)
-    return function(...)
-        local args = {...}
-        local argsLength = select("#", ...)
-        return {
-            ____coroutine = coroutine.create(
-                function() return fn(
-                    (unpack or table.unpack)(args, 1, argsLength)
-                ) end
-            ),
-            [Symbol.iterator] = __TS__GeneratorIterator,
-            next = __TS__GeneratorNext
-        }
-    end
-end
-
 function __TS__InstanceOf(obj, classTbl)
     if type(classTbl) ~= "table" then
         error("Right-hand side of 'instanceof' is not an object", 0)
@@ -764,7 +679,7 @@ function __TS__InstanceOf(obj, classTbl)
     if classTbl[Symbol.hasInstance] ~= nil then
         return not (not classTbl[Symbol.hasInstance](classTbl, obj))
     end
-    if type(obj) == "table" then
+    if obj ~= nil then
         local luaClass = obj.constructor
         while luaClass ~= nil do
             if luaClass == classTbl then
@@ -781,46 +696,28 @@ function __TS__InstanceOfObject(value)
     return (valueType == "table") or (valueType == "function")
 end
 
-function __TS__IteratorGeneratorStep(self)
-    local co = self.____coroutine
-    local status, value = coroutine.resume(co)
-    if not status then
-        error(value, 0)
-    end
-    if coroutine.status(co) == "dead" then
-        return
-    end
-    return true, value
-end
-function __TS__IteratorIteratorStep(self)
-    local result = self:next()
-    if result.done then
-        return
-    end
-    return true, result.value
-end
-function __TS__IteratorStringStep(self, index)
-    index = index + 1
-    if index > #self then
-        return
-    end
-    return index, string.sub(self, index, index)
-end
 function __TS__Iterator(iterable)
-    if type(iterable) == "string" then
-        return __TS__IteratorStringStep, iterable, 0
-    elseif iterable.____coroutine ~= nil then
-        return __TS__IteratorGeneratorStep, iterable
-    elseif iterable[Symbol.iterator] then
+    if iterable[Symbol.iterator] then
         local iterator = iterable[Symbol.iterator](iterable)
-        return __TS__IteratorIteratorStep, iterator
+        return function()
+            local result = iterator:next()
+            if not result.done then
+                return result.value
+            else
+                return nil
+            end
+        end
     else
-        return ipairs(iterable)
+        local i = 0
+        return function()
+            i = i + 1
+            return iterable[i]
+        end
     end
 end
 
 Map = (function()
-    local Map = __TS__Class()
+    local Map = __TS__Class("Map")
     Map.name = "Map"
     function Map.prototype.____constructor(self, entries)
         self[Symbol.toStringTag] = "Map"
@@ -856,6 +753,7 @@ Map = (function()
         self.firstKey = nil
         self.lastKey = nil
         self.size = 0
+        return
     end
     function Map.prototype.delete(self, key)
         local contains = self:has(key)
@@ -883,11 +781,12 @@ Map = (function()
         return contains
     end
     function Map.prototype.forEach(self, callback)
-        for ____, key in __TS__Iterator(
+        for key in __TS__Iterator(
             self:keys()
         ) do
             callback(_G, self.items[key], key, self)
         end
+        return
     end
     function Map.prototype.get(self, key)
         return self.items[key]
@@ -915,9 +814,8 @@ Map = (function()
         return self:entries()
     end
     function Map.prototype.entries(self)
-        local ____ = self
-        local items = ____.items
-        local nextKey = ____.nextKey
+        local items = self.items
+        local nextKey = self.nextKey
         local key = self.firstKey
         return {
             [Symbol.iterator] = function(self)
@@ -945,9 +843,8 @@ Map = (function()
         }
     end
     function Map.prototype.values(self)
-        local ____ = self
-        local items = ____.items
-        local nextKey = ____.nextKey
+        local items = self.items
+        local nextKey = self.nextKey
         local key = self.firstKey
         return {
             [Symbol.iterator] = function(self)
@@ -964,7 +861,31 @@ Map = (function()
     return Map
 end)()
 
-__TS__MathAtan2 = math.atan2 or math.atan
+function __TS__NewIndex(classProto)
+    return function(tbl, key, val)
+        local proto = classProto
+        while true do
+            local setters = rawget(proto, "____setters")
+            if setters then
+                local setter
+                setter = setters[key]
+                if setter then
+                    setter(tbl, val)
+                    return
+                end
+            end
+            local base = rawget(
+                rawget(proto, "constructor"),
+                "____super"
+            )
+            if not base then
+                break
+            end
+            proto = rawget(base, "prototype")
+        end
+        rawset(tbl, key, val)
+    end
+end
 
 function __TS__Number(value)
     local valueType = type(value)
@@ -1022,7 +943,7 @@ function __TS__NumberToString(self, radix)
         repeat
             do
                 result = tostring(
-                    __TS__StringAccess(____radixChars, integer % radix)
+                    string.sub(____radixChars, (integer % radix) + 1, (integer % radix) + 1)
                 ) .. tostring(result)
                 integer = math.floor(integer / radix)
             end
@@ -1037,7 +958,7 @@ function __TS__NumberToString(self, radix)
                 delta = delta * radix
                 local digit = math.floor(fraction)
                 result = tostring(result) .. tostring(
-                    __TS__StringAccess(____radixChars, digit)
+                    string.sub(____radixChars, digit + 1, digit + 1)
                 )
                 fraction = fraction - digit
             end
@@ -1060,105 +981,6 @@ function __TS__ObjectAssign(to, ...)
         end
     end
     return to
-end
-
-function ____descriptorIndex(self, key)
-    local value = rawget(self, key)
-    if value ~= nil then
-        return value
-    end
-    local metatable = getmetatable(self)
-    while metatable do
-        local rawResult = rawget(metatable, key)
-        if rawResult ~= nil then
-            return rawResult
-        end
-        local descriptors = rawget(metatable, "_descriptors")
-        if descriptors then
-            local descriptor = descriptors[key]
-            if descriptor then
-                if descriptor.get then
-                    return descriptor.get(self)
-                end
-                return descriptor.value
-            end
-        end
-        metatable = getmetatable(metatable)
-    end
-end
-function ____descriptorNewindex(self, key, value)
-    local metatable = getmetatable(self)
-    while metatable do
-        local descriptors = rawget(metatable, "_descriptors")
-        if descriptors then
-            local descriptor = descriptors[key]
-            if descriptor then
-                if descriptor.set then
-                    descriptor.set(self, value)
-                else
-                    if descriptor.writable == false then
-                        error(
-                            ((("Cannot assign to read only property '" .. tostring(key)) .. "' of object '") .. tostring(self)) .. "'",
-                            0
-                        )
-                    end
-                    descriptor.value = value
-                end
-                return
-            end
-        end
-        metatable = getmetatable(metatable)
-    end
-    rawset(self, key, value)
-end
-function __TS__SetDescriptor(target, key, desc, isPrototype)
-    if isPrototype == nil then
-        isPrototype = false
-    end
-    local metatable = ((isPrototype and (function() return target end)) or (function() return getmetatable(target) end))()
-    if not metatable then
-        metatable = {}
-        setmetatable(target, metatable)
-    end
-    local value = rawget(target, key)
-    if value ~= nil then
-        rawset(target, key, nil)
-    end
-    if not rawget(metatable, "_descriptors") then
-        metatable._descriptors = {}
-    end
-    local descriptor = __TS__CloneDescriptor(desc)
-    metatable._descriptors[key] = descriptor
-    metatable.__index = ____descriptorIndex
-    metatable.__newindex = ____descriptorNewindex
-end
-
-function __TS__ObjectDefineProperty(target, key, desc)
-    local luaKey = (((type(key) == "number") and (function() return key + 1 end)) or (function() return key end))()
-    local value = rawget(target, luaKey)
-    local hasGetterOrSetter = (desc.get ~= nil) or (desc.set ~= nil)
-    local descriptor
-    if hasGetterOrSetter then
-        if value ~= nil then
-            error(
-                "Cannot redefine property: " .. tostring(key),
-                0
-            )
-        end
-        descriptor = desc
-    else
-        local valueExists = value ~= nil
-        descriptor = {
-            set = desc.set,
-            get = desc.get,
-            configurable = (((desc.configurable ~= nil) and (function() return desc.configurable end)) or (function() return valueExists end))(),
-            enumerable = (((desc.enumerable ~= nil) and (function() return desc.enumerable end)) or (function() return valueExists end))(),
-            writable = (((desc.writable ~= nil) and (function() return desc.writable end)) or (function() return valueExists end))(),
-            value = (((desc.value ~= nil) and (function() return desc.value end)) or (function() return value end))()
-        }
-    end
-    __TS__SetDescriptor(target, luaKey, descriptor)
-    return target
 end
 
 function __TS__ObjectEntries(obj)
@@ -1190,17 +1012,6 @@ function __TS__ObjectFromEntries(entries)
     return obj
 end
 
-function __TS__ObjectGetOwnPropertyDescriptor(object, key)
-    local metatable = getmetatable(object)
-    if not metatable then
-        return
-    end
-    if not rawget(metatable, "_descriptors") then
-        return
-    end
-    return rawget(metatable, "_descriptors")[key]
-end
-
 function __TS__ObjectKeys(obj)
     local result = {}
     for key in pairs(obj) do
@@ -1227,50 +1038,8 @@ function __TS__ObjectValues(obj)
     return result
 end
 
-function __TS__ParseFloat(numberString)
-    local infinityMatch = string.match(numberString, "^%s*(-?Infinity)")
-    if infinityMatch then
-        return (((__TS__StringAccess(infinityMatch, 0) == "-") and (function() return -math.huge end)) or (function() return math.huge end))()
-    end
-    local number = tonumber(
-        string.match(numberString, "^%s*(-?%d+%.?%d*)")
-    )
-    return number or (0 / 0)
-end
-
-__TS__parseInt_base_pattern = "0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTvVwWxXyYzZ"
-function __TS__ParseInt(numberString, base)
-    if base == nil then
-        base = 10
-        local hexMatch = string.match(numberString, "^%s*-?0[xX]")
-        if hexMatch then
-            base = 16
-            numberString = ((string.match(hexMatch, "-") and (function() return "-" .. tostring(
-                __TS__StringSubstr(numberString, #hexMatch)
-            ) end)) or (function() return __TS__StringSubstr(numberString, #hexMatch) end))()
-        end
-    end
-    if (base < 2) or (base > 36) then
-        return 0 / 0
-    end
-    local allowedDigits = (((base <= 10) and (function() return __TS__StringSubstring(__TS__parseInt_base_pattern, 0, base) end)) or (function() return __TS__StringSubstr(__TS__parseInt_base_pattern, 0, 10 + (2 * (base - 10))) end))()
-    local pattern = ("^%s*(-?[" .. tostring(allowedDigits)) .. "]*)"
-    local number = tonumber(
-        string.match(numberString, pattern),
-        base
-    )
-    if number == nil then
-        return 0 / 0
-    end
-    if number >= 0 then
-        return math.floor(number)
-    else
-        return math.ceil(number)
-    end
-end
-
 Set = (function()
-    local Set = __TS__Class()
+    local Set = __TS__Class("Set")
     Set.name = "Set"
     function Set.prototype.____constructor(self, values)
         self[Symbol.toStringTag] = "Set"
@@ -1318,6 +1087,7 @@ Set = (function()
         self.firstKey = nil
         self.lastKey = nil
         self.size = 0
+        return
     end
     function Set.prototype.delete(self, value)
         local contains = self:has(value)
@@ -1344,7 +1114,7 @@ Set = (function()
         return contains
     end
     function Set.prototype.forEach(self, callback)
-        for ____, key in __TS__Iterator(
+        for key in __TS__Iterator(
             self:keys()
         ) do
             callback(_G, key, key, self)
@@ -1403,7 +1173,7 @@ Set = (function()
 end)()
 
 WeakMap = (function()
-    local WeakMap = __TS__Class()
+    local WeakMap = __TS__Class("WeakMap")
     WeakMap.name = "WeakMap"
     function WeakMap.prototype.____constructor(self, entries)
         self[Symbol.toStringTag] = "WeakMap"
@@ -1449,7 +1219,7 @@ WeakMap = (function()
 end)()
 
 WeakSet = (function()
-    local WeakSet = __TS__Class()
+    local WeakSet = __TS__Class("WeakSet")
     WeakSet.name = "WeakSet"
     function WeakSet.prototype.____constructor(self, values)
         self[Symbol.toStringTag] = "WeakSet"
@@ -1496,12 +1266,7 @@ function __TS__SourceMapTraceBack(fileName, sourceMap)
     if _G.__TS__originalTraceback == nil then
         _G.__TS__originalTraceback = debug.traceback
         debug.traceback = function(thread, message, level)
-            local trace
-            if ((thread == nil) and (message == nil)) and (level == nil) then
-                trace = _G.__TS__originalTraceback()
-            else
-                trace = _G.__TS__originalTraceback(thread, message, level)
-            end
+            local trace = _G.__TS__originalTraceback(thread, message, level)
             if type(trace) ~= "string" then
                 return trace
             end
@@ -1527,42 +1292,16 @@ function __TS__Spread(iterable)
         do
             local i = 0
             while i < #iterable do
-                arr[#arr + 1] = __TS__StringAccess(iterable, i)
+                arr[#arr + 1] = string.sub(iterable, i + 1, i + 1)
                 i = i + 1
             end
         end
     else
-        for ____, item in __TS__Iterator(iterable) do
+        for item in __TS__Iterator(iterable) do
             arr[#arr + 1] = item
         end
     end
-    return __TS__Unpack(arr)
-end
-
-function __TS__StringAccess(self, index)
-    if (index >= 0) and (index < #self) then
-        return string.sub(self, index + 1, index + 1)
-    end
-end
-
-function __TS__StringCharAt(self, pos)
-    if pos ~= pos then
-        pos = 0
-    end
-    if pos < 0 then
-        return ""
-    end
-    return string.sub(self, pos + 1, pos + 1)
-end
-
-function __TS__StringCharCodeAt(self, index)
-    if index ~= index then
-        index = 0
-    end
-    if index < 0 then
-        return 0 / 0
-    end
-    return string.byte(self, index + 1) or (0 / 0)
+    return (table.unpack or unpack)(arr)
 end
 
 function __TS__StringConcat(str1, ...)
@@ -1646,7 +1385,7 @@ end
 function __TS__StringReplace(source, searchValue, replaceValue)
     searchValue = string.gsub(searchValue, "[%%%(%)%.%+%-%*%?%[%^%$]", "%%%1")
     if type(replaceValue) == "string" then
-        replaceValue = string.gsub(replaceValue, "%%", "%%%%")
+        replaceValue = string.gsub(replaceValue, "[%%%(%)%.%+%-%*%?%[%^%$]", "%%%1")
         local result = string.gsub(source, searchValue, replaceValue, 1)
         return result
     else
@@ -1658,22 +1397,6 @@ function __TS__StringReplace(source, searchValue, replaceValue)
         )
         return result
     end
-end
-
-function __TS__StringSlice(self, start, ____end)
-    if (start == nil) or (start ~= start) then
-        start = 0
-    end
-    if ____end ~= ____end then
-        ____end = 0
-    end
-    if start >= 0 then
-        start = start + 1
-    end
-    if (____end ~= nil) and (____end < 0) then
-        ____end = ____end - 1
-    end
-    return string.sub(self, start, ____end)
 end
 
 function __TS__StringSplit(source, separator, limit)
@@ -1688,7 +1411,7 @@ function __TS__StringSplit(source, separator, limit)
     local count = 0
     if (separator == nil) or (separator == "") then
         while (index < (#source - 1)) and (count < limit) do
-            out[count + 1] = __TS__StringAccess(source, index)
+            out[count + 1] = string.sub(source, index + 1, index + 1)
             count = count + 1
             index = index + 1
         end
@@ -1696,19 +1419,14 @@ function __TS__StringSplit(source, separator, limit)
         local separatorLength = #separator
         local nextIndex = (string.find(source, separator, nil, true) or 0) - 1
         while (nextIndex >= 0) and (count < limit) do
-            out[count + 1] = __TS__StringSubstring(source, index, nextIndex)
+            out[count + 1] = string.sub(source, index + 1, nextIndex)
             count = count + 1
             index = nextIndex + separatorLength
-            nextIndex = (string.find(
-                source,
-                separator,
-                math.max(index + 1, 1),
-                true
-            ) or 0) - 1
+            nextIndex = (string.find(source, separator, index + 1, true) or 0) - 1
         end
     end
     if count < limit then
-        out[count + 1] = __TS__StringSubstring(source, index)
+        out[count + 1] = string.sub(source, index + 1)
     end
     return out
 end
@@ -1718,40 +1436,6 @@ function __TS__StringStartsWith(self, searchString, position)
         position = 0
     end
     return string.sub(self, position + 1, #searchString + position) == searchString
-end
-
-function __TS__StringSubstr(self, from, length)
-    if from ~= from then
-        from = 0
-    end
-    if length ~= nil then
-        if (length ~= length) or (length <= 0) then
-            return ""
-        end
-        length = length + from
-    end
-    if from >= 0 then
-        from = from + 1
-    end
-    return string.sub(self, from, length)
-end
-
-function __TS__StringSubstring(self, start, ____end)
-    if ____end ~= ____end then
-        ____end = 0
-    end
-    if (____end ~= nil) and (start > ____end) then
-        start, ____end = __TS__Unpack({____end, start})
-    end
-    if start >= 0 then
-        start = start + 1
-    else
-        start = 1
-    end
-    if (____end ~= nil) and (____end < 0) then
-        ____end = 0
-    end
-    return string.sub(self, start, ____end)
 end
 
 function __TS__StringTrim(self)
