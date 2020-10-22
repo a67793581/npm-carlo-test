@@ -1,7 +1,6 @@
 require("lualib_bundle");
 local ____exports = {}
 require("cerrie.init")
-require("cerrie.livereload")
 local Carlo = __TS__Class("Carlo")
 Carlo.name = "Carlo"
 function Carlo.prototype.____constructor(self)

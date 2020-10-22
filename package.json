@@ -10,11 +10,8 @@
   "author": "carlo",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "ceres-decl": "^1.0.8",
     "ceres-tstl": "^0.31.0-patch1",
-    "cerrie": "^1.0.4",
-    "lua-types": "^2.8.0",
-    "typescript-to-lua": "^0.36.0"
+    "cerrie": "^1.0.4"
   },
   "scripts": {
     "tstl-watch": "ceres-tstl --watch",

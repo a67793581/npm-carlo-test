@@ -1,6 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import "cerrie/init"
-import "cerrie/livereload"
 class Carlo {
     /**
      * 获取所有游戏中的玩家
